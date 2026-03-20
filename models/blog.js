@@ -1,0 +1,78 @@
+import pool from "../config/db.js";
+
+class BlogModel {
+  // CREATE
+  static async createPost(postData) {
+    const { user_id, title, description, tag, body, reading_time } = postData;
+
+    const query = `
+      INSERT INTO posts (user_id, title, description, tag, body, reading_time)
+      VALUES ($1,$2,$3,$4,$5,$6)
+      RETURNING *
+    `;
+
+    const values = [user_id, title, description, tag, body, reading_time];
+
+    const result = await pool.query(query, values);
+
+    return result.rows[0];
+  }
+
+  // READ ALL
+  static async getAllPosts() {
+    const result = await pool.query(
+      "SELECT * FROM posts ORDER BY created_at DESC",
+    );
+
+    return result.rows;
+  }
+
+  // READ ONE
+  static async getPostById(id) {
+    const result = await pool.query("SELECT * FROM posts WHERE id = $1", [id]);
+
+    return result.rows[0];
+  }
+
+  // UPDATE
+  static async updatePost(id, data) {
+    const { title, description, tag, body, state, reading_time } = data;
+
+    const query = `
+      UPDATE posts
+      SET title=$1, description=$2, tag=$3, body=$4, state=$5, reading_time=$6
+      WHERE id=$7
+      RETURNING *
+    `;
+
+    const values = [title, description, tag, body, state, reading_time];
+
+    const result = await pool.query(query, values);
+
+    return result.rows[0];
+  }
+
+  // DELETE
+  static async deletePost(id) {
+    const result = await pool.query(
+      "DELETE FROM posts WHERE id=$1 RETURNING *",
+      [id],
+    );
+
+    return result.rows[0];
+  }
+
+  //increment
+  static async incrementReadCount(postId) {
+    const query = `
+    UPDATE posts
+    SET read_count = read_count + 1
+    WHERE id = $1
+    RETURNING *
+  `;
+    const result = await pool.query(query, [postId]);
+    return result.rows[0];
+  }
+}
+
+export default BlogModel;
