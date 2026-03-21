@@ -1,4 +1,5 @@
-import pool from "../config/db.js";
+import pool from "../db/connect.js";
+import calculateReadingTime from "../utils/readingTime.js";
 
 class BlogModel {
   // CREATE
@@ -36,19 +37,29 @@ class BlogModel {
 
   // UPDATE
   static async updatePost(id, data) {
-    const { title, description, tag, body, state, reading_time } = data;
+    // 1. Fetch existing post
+    const existing = await BlogModel.getPostById(id);
+    if (!existing) return null;
+
+    // 2. Merge — keep existing values for anything not sent
+    const title = data.title ?? existing.title;
+    const description = data.description ?? existing.description;
+    const tag = data.tag ?? existing.tag;
+    const body = data.body ?? existing.body;
+    const state = data.state ?? existing.state;
+    const reading_time = data.body
+      ? calculateReadingTime(data.body) // recalculate only if body changed
+      : existing.reading_time;
 
     const query = `
-      UPDATE posts
-      SET title=$1, description=$2, tag=$3, body=$4, state=$5, reading_time=$6
-      WHERE id=$7
-      RETURNING *
-    `;
+    UPDATE posts
+    SET title=$1, description=$2, tag=$3, body=$4, state=$5, reading_time=$6
+    WHERE id=$7
+    RETURNING *
+  `;
 
-    const values = [title, description, tag, body, state, reading_time];
-
+    const values = [title, description, tag, body, state, reading_time, id];
     const result = await pool.query(query, values);
-
     return result.rows[0];
   }
 

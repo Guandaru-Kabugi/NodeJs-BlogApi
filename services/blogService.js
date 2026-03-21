@@ -1,4 +1,4 @@
-import BlogModel from "../models/blogModel.js";
+import BlogModel from "../models/blog.js";
 import calculateReadingTime from "../utils/readingTime.js";
 import AppError from "../utils/appError.js";
 
